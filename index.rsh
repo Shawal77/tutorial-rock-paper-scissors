@@ -1,68 +1,74 @@
-'reach 0.1'
+'reach 0.1';
 
-//change front end to get what they play
-//create a player class
+const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
+const [ isOutcome, BOB_WINS, DRAW, ALICE_WINS ] = makeEnum(3);
+
+const winner = (handAlice, handBob) =>
+((handAlice + (4 - handBob)) % 3);
+
+assert(winner(ROCK, PAPER) == BOB_WINS);
+assert(winner(PAPER, ROCK) == ALICE_WINS);
+assert(winner(ROCK, ROCK) == DRAW);
+
+forall(UInt, handAlice =>//for any int of
+forall(UInt, handBob =>// for any int
+    assert(isOutcome(winner(handAlice, handBob)))));
+
+forall(UInt, (hand) =>
+assert(winner(hand, hand) == DRAW));
+
 const Player = {
-    //get hand gets a number from user
-    getHand: Fun([],UInt),//function that takes in void and returns unsigned int
-    //see outcome return output to user
-    seeOutcome: Fun([UInt],Null),
+    ...hasRandom, // <--- new!
+    getHand: Fun([], UInt),
+    seeOutcome: Fun([UInt], Null),
 };
 
-//this is a back end that exports the main
-export const main = Reach.App(()=>{
-    const Alice = Participant(//objects
-        'Alice',{
-            //specify alice's interact interface here
-            ...Player,
-            wager : UInt, //wager is typr Uint
-        }
-    );
-    const Bob = Participant(//objects
-        'Bob',{
-            //specify Bob's interact info here
-            ...Player,
-            acceptWager: Fun([UInt],Null),//return int to user
-        }
-    );
-    init ();
-    //write your program here
-    Alice.only(()=>{
-        //alice will give her hand first
+export const main = Reach.App(() => {
+    const Alice = Participant('Alice', {
+      ...Player,
+      wager: UInt,
+    });
+    const Bob   = Participant('Bob', {
+      ...Player,
+      acceptWager: Fun([UInt], Null),
+    });
+    init();
+
+    Alice.only(() => {
         const wager = declassify(interact.wager);
-        const handAlice = declassify(interact.getHand());
-    })
-    //alice's hand is sent to network
-    Alice.publish(wager, handAlice)
-        .pay(wager);
+        const _handAlice = interact.getHand();
+        const [_commitAlice, _saltAlice] = makeCommitment(interact, _handAlice);
+        const commitAlice = declassify(_commitAlice);
+      });
+    Alice.publish(wager, commitAlice)
+    .pay(wager);
     commit();
 
-    unknowable(Bob, Alice(handAlice)); //bob can't know what alice played
+    unknowable(Bob, Alice(_handAlice, _saltAlice));
     Bob.only(() => {
-        interact.acceptWager(wager);
-        const handBob = declassify(interact.getHand());
-        //const handBob = ( handAlice + 1) % 3;
+    interact.acceptWager(wager);
+    const handBob = declassify(interact.getHand());
     });
     Bob.publish(handBob)
     .pay(wager);
-
-    /*const outcome = (handAlice + (4 - handBob)) % 3;
     commit();
 
-    each([Alice, Bob], () => {
-    interact.seeOutcome(outcome);
-    });*/
+    Alice.only(() => {
+        const saltAlice = declassify(_saltAlice);
+        const handAlice = declassify(_handAlice);
+      });
+      Alice.publish(saltAlice, handAlice);
+      checkCommitment(commitAlice, saltAlice, handAlice);
 
-    //getting amounts to be exchanged
-    const outcome = (handAlice + (4 - handBob)) % 3;
-    //require(handBob == (handAlice + 1) % 3 );
-    //assert(outcome == 0 );
-
-    const            [forAlice, forBob] =
-      outcome == 2 ? [       2,      0] :
-      outcome == 0 ? [       0,      2] :
-      /* tie      */ [       1,      1];
-    transfer(forAlice * wager).to(Alice);
-    transfer(forBob   * wager).to(Bob);
-    commit();
+      const outcome = winner(handAlice, handBob);
+      const                 [forAlice, forBob] =
+        outcome == ALICE_WINS ? [       2,      0] :
+        outcome == BOB_WINS ? [       0,      2] :
+        /* tie           */ [       1,      1];
+      transfer(forAlice * wager).to(Alice);
+      transfer(forBob   * wager).to(Bob);
+      commit();
+      each([Alice, Bob], () => {
+        interact.seeOutcome(outcome);
+      });
 });

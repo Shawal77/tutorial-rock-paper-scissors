@@ -20,6 +20,7 @@ const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 const HAND = [' Rock ', ' Paper ', ' Scissors '];
 const OUTCOME = [' Bob Wins ', ' Draw ', ' Alice Wins '];
 const Player = (who) => ({
+    ...stdlib.hasRandom, // <--- new!
     getHand: () => {
         const hand = Math.floor((Math.random() * 3 ));
         console.log(`${who} played ${HAND[hand]}`);
