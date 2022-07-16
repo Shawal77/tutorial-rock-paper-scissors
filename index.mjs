@@ -21,13 +21,22 @@ const HAND = [' Rock ', ' Paper ', ' Scissors '];
 const OUTCOME = [' Bob Wins ', ' Draw ', ' Alice Wins '];
 const Player = (who) => ({
     ...stdlib.hasRandom, // <--- new!
-    getHand: () => {
+    getHand: async () => {
         const hand = Math.floor((Math.random() * 3 ));
         console.log(`${who} played ${HAND[hand]}`);
+        if ( Math.random() <= 0.01){
+            for ( let i = 0; i<10; i++ ){
+                console.log(`${who} takes sweet time`);
+                await stdlib.wait(1);
+            }
+        }
         return hand;
     },
     seeOutcome: (outcome)=>{
         console.log(`${ who } saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+        console.log(`${who} observed a timeout`);
     },
 });
 //
@@ -36,14 +45,16 @@ await Promise.all([
         //implement Alice's interact object here
         ...Player('Alice'),
         wager: stdlib.parseCurrency(5),
+        deadline: 10,
     }),
     ctcBob.p.Bob({
         //implement Bob's interact object here
         ...Player('Bob'),
         acceptWager: (amt) => {
-            console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+                    console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+            },
         },
-    }),
+    ),
 ]);
 
 const afterAlice = await getBalance(accAlice);
