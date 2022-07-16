@@ -26,6 +26,20 @@ export const main = Reach.App(()=>{
     init ();
     //write your program here
     Alice.only(()=>{
-
+        //alice will give her hand first
+        const handAlice = declassify(interact.getHand());
     })
+    //alice's hand is sent to network
+    Alice.publish(handAlice);
+    commit();
+    Bob.only(() => {
+        const handBob = declassify(interact.getHand());
+    });
+    Bob.publish(handBob);
+    const outcome = (handAlice + (4 - handBob)) % 3;
+    commit();
+
+    each([Alice, Bob], () => {
+    interact.seeOutcome(outcome);
+    });
 });
