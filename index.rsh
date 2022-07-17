@@ -1,5 +1,5 @@
 'reach 0.1';
-
+//next time Interaction and independance
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isOutcome, BOB_WINS, DRAW, ALICE_WINS ] = makeEnum(3);
 
